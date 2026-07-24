@@ -1,20 +1,24 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Zap, TrendingUp, Target, Bot, ArrowDownCircle } from "lucide-react";
+import { Sparkles, Zap, TrendingUp, Target, Bot, ArrowRightCircle } from "lucide-react";
+
+interface HeroProps {
+  onSelectApp: (appId: "tutor" | "equation" | "proportion" | "omok") => void;
+}
 
 /**
- * [메인 히어로 세션 컴포넌트]
+ * [메인 히어로 대시보드 컴포넌트]
  * 메인 칠판 화면에 4가지 수학 학습 앱(AI 수학 튜터 챗봇, 일차방정식 랭킹, 비례 그래프, 순서쌍 오목)
- * 대형 버튼 카드를 배치합니다.
+ * 직관적인 대형 버튼 카드를 배치하고, 클릭 시 해당 앱으로 즉시 이동하도록 연결합니다.
  */
-export default function Hero() {
+export default function Hero({ onSelectApp }: HeroProps) {
   return (
-    <section id="hero" className="w-full py-10 md:py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+    <section id="hero" className="w-full py-8 md:py-14 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
       {/* 칠판 프레임 (아날로그 원목 테두리) */}
       <div className="relative wood-frame rounded-2xl bg-teal-900/90 p-6 sm:p-10 md:p-12 border-4 border-amber-900/80 shadow-2xl overflow-hidden">
         
-        {/* 칠판 배지 및 타이틀 */}
+        {/* 칠판 배지 및 메인 타이틀 */}
         <div className="border-2 border-dashed border-teal-500/40 rounded-xl p-6 sm:p-8 flex flex-col items-center text-center space-y-6">
           
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-950/80 border border-dashed border-chalk-yellow text-chalk-yellow text-sm font-medium animate-pulse">
@@ -30,31 +34,30 @@ export default function Hero() {
           </h1>
 
           <p className="font-dodum text-base sm:text-xl text-teal-100/90 max-w-2xl leading-relaxed">
-            원하는 수학 탐구 모듈의 버튼을 눌러 바로 학습에 참여해보세요! <br className="hidden sm:inline" />
-            <strong>OpenAI 지윤샘 AI 튜터</strong>가 수학 질문에 실시간 답변하며, 학습 결과는 <strong>Supabase DB</strong>에 저장됩니다.
+            아래 4가지 수학 학습 도구 중 원하는 <strong>앱 버튼</strong>을 선택해 보세요! <br className="hidden sm:inline" />
+            선택한 앱 페이지로 바로 이동하여 몰입감 있게 학습할 수 있습니다.
           </p>
 
           {/* === 메인 칠판 수학 앱 4대 대형 버튼 카드 메뉴판 === */}
-          <div className="w-full pt-4 space-y-3">
-            <div className="flex items-center justify-center gap-1.5 text-chalk-yellow font-pen text-2xl">
-              <span>👇 수학 학습 도구 선택하기</span>
-              <ArrowDownCircle className="w-5 h-5 animate-bounce text-chalk-yellow" />
+          <div className="w-full pt-4 space-y-4">
+            <div className="flex items-center justify-center gap-1.5 text-chalk-yellow font-pen text-2xl sm:text-3xl">
+              <span>🚀 학습할 수학 앱을 선택하세요</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full text-left">
               
               {/* 버튼 1: 지윤샘 AI 수학 튜터 챗봇 */}
-              <a
-                href="#math-tutor"
+              <button
+                onClick={() => onSelectApp("tutor")}
                 className="group relative p-5 bg-teal-950/90 hover:bg-emerald-950/90 rounded-2xl border-2 border-dashed border-chalk-yellow hover:border-emerald-400 shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-emerald-500/20 text-chalk-yellow rounded-xl border border-dashed border-emerald-400">
+                    <span className="p-2.5 bg-emerald-500/20 text-chalk-yellow rounded-xl border border-dashed border-emerald-400">
                       <Bot className="w-6 h-6 text-chalk-yellow" />
                     </span>
                     <span className="text-[11px] font-mono font-bold text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-700">
-                      OpenAI 연동
+                      OpenAI AI 튜터
                     </span>
                   </div>
 
@@ -67,19 +70,19 @@ export default function Hero() {
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-dashed border-teal-800 text-xs font-dodum text-chalk-yellow flex items-center justify-between font-bold">
-                  <span>AI 튜터와 대화하기 ➔</span>
-                  <span className="text-[10px] text-teal-400 font-normal">AI Mentor</span>
+                  <span>앱 실행하기</span>
+                  <ArrowRightCircle className="w-4 h-4 text-chalk-yellow group-hover:translate-x-1 transition-transform" />
                 </div>
-              </a>
+              </button>
 
               {/* 버튼 2: 일차방정식 스피드 랭킹전 */}
-              <a
-                href="#equation-game"
+              <button
+                onClick={() => onSelectApp("equation")}
                 className="group relative p-5 bg-teal-950/90 hover:bg-amber-950/80 rounded-2xl border-2 border-dashed border-amber-400 hover:border-amber-300 shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-amber-500/20 text-chalk-yellow rounded-xl border border-dashed border-amber-400">
+                    <span className="p-2.5 bg-amber-500/20 text-chalk-yellow rounded-xl border border-dashed border-amber-400">
                       <Zap className="w-6 h-6 fill-chalk-yellow text-chalk-yellow" />
                     </span>
                     <span className="text-[11px] font-mono font-bold text-amber-300 bg-amber-950 px-2 py-0.5 rounded border border-amber-700">
@@ -96,19 +99,19 @@ export default function Hero() {
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-dashed border-teal-800 text-xs font-dodum text-chalk-yellow flex items-center justify-between font-bold">
-                  <span>게임 시작하기 ➔</span>
-                  <span className="text-[10px] text-teal-400 font-normal">Rank Game</span>
+                  <span>앱 실행하기</span>
+                  <ArrowRightCircle className="w-4 h-4 text-chalk-yellow group-hover:translate-x-1 transition-transform" />
                 </div>
-              </a>
+              </button>
 
               {/* 버튼 3: 정비례·반비례 그래프 탐구기 */}
-              <a
-                href="#proportion-graph"
+              <button
+                onClick={() => onSelectApp("proportion")}
                 className="group relative p-5 bg-teal-950/90 hover:bg-teal-900/90 rounded-2xl border-2 border-dashed border-chalk-pink hover:border-pink-400 shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-pink-500/20 text-chalk-pink rounded-xl border border-dashed border-pink-400">
+                    <span className="p-2.5 bg-pink-500/20 text-chalk-pink rounded-xl border border-dashed border-pink-400">
                       <TrendingUp className="w-6 h-6" />
                     </span>
                     <span className="text-[11px] font-mono font-bold text-pink-300 bg-pink-950 px-2 py-0.5 rounded border border-pink-800">
@@ -125,19 +128,19 @@ export default function Hero() {
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-dashed border-teal-800 text-xs font-dodum text-chalk-pink flex items-center justify-between font-bold">
-                  <span>그래프 탐구하기 ➔</span>
-                  <span className="text-[10px] text-teal-400 font-normal">Graph Tool</span>
+                  <span>앱 실행하기</span>
+                  <ArrowRightCircle className="w-4 h-4 text-chalk-pink group-hover:translate-x-1 transition-transform" />
                 </div>
-              </a>
+              </button>
 
               {/* 버튼 4: (0,0) 중심 순서쌍 블라인드 오목 */}
-              <a
-                href="#blind-omok"
+              <button
+                onClick={() => onSelectApp("omok")}
                 className="group relative p-5 bg-teal-950/90 hover:bg-teal-900/90 rounded-2xl border-2 border-dashed border-chalk-white hover:border-teal-300 shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-teal-500/20 text-chalk-white rounded-xl border border-dashed border-teal-300">
+                    <span className="p-2.5 bg-teal-500/20 text-chalk-white rounded-xl border border-dashed border-teal-300">
                       <Target className="w-6 h-6" />
                     </span>
                     <span className="text-[11px] font-mono font-bold text-teal-300 bg-teal-950 px-2 py-0.5 rounded border border-teal-800">
@@ -154,10 +157,10 @@ export default function Hero() {
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-dashed border-teal-800 text-xs font-dodum text-chalk-white flex items-center justify-between font-bold">
-                  <span>오목 두러 가기 ➔</span>
-                  <span className="text-[10px] text-teal-400 font-normal">Math Board</span>
+                  <span>앱 실행하기</span>
+                  <ArrowRightCircle className="w-4 h-4 text-chalk-white group-hover:translate-x-1 transition-transform" />
                 </div>
-              </a>
+              </button>
 
             </div>
           </div>
@@ -167,7 +170,7 @@ export default function Hero() {
         {/* 칠판 하단 장식 */}
         <div className="mt-6 pt-4 border-t-2 border-dashed border-teal-700/50 flex justify-between items-center text-xs text-teal-300/70 font-pen text-lg">
           <span>✏️ 지윤샘의 즐거운 수학 교실</span>
-          <span>🤖 OpenAI AI 튜터 24시간 실시간 질문 지원</span>
+          <span>🚀 클릭하여 각 앱으로 자유롭게 이동해보세요</span>
         </div>
 
       </div>
