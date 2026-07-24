@@ -13,28 +13,31 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.OPENAI_API_KEY;
 
-    // OpenAI API 키가 설정되지 않은 경우 친절한 안내 및 내장 지식 응답 제공
+    // OpenAI API 키 미설정 시 수식 표기 내장 답변 제공
     if (!apiKey || apiKey.trim() === "") {
       const fallbackReply = generateFallbackResponse(message);
       return NextResponse.json({
-        reply: `${fallbackReply}\n\n💡 *안내: Vercel 대시보드의 Environment Variables에 OPENAI_API_KEY를 등록하시면 더욱 풍부한 최신 AI 답변을 실시간으로 이용하실 수 있습니다.*`,
+        reply: `${fallbackReply}\n\n💡 *안내: Vercel 대시보드의 Environment Variables에 OPENAI_API_KEY를 등록하시면 더 다양하고 풍부한 수식 해설을 실시간으로 받으실 수 있습니다.*`,
         isFallback: true,
       });
     }
 
-    // 시스템 프롬프트 (지윤샘 AI 수학 튜터 페르소나 설정)
+    // 시스템 프롬프트 (수식 LaTeX 및 $...$ 수학 표기법 강제 지침)
     const systemMessage = {
       role: "system",
-      content: `당신은 '지윤샘의 AI 수학 튜터'입니다. 초·중등 학생들과 선생님들을 위해 수학 개념과 문제를 친절하고 알기 쉽게 단계별로 설명하는 친근한 수학 선생님입니다.
-      
-[답변 지침]
-1. 항상 따뜻하고 격려하는 어조(~해요, ~랍니다! ✏️)로 대화하세요.
-2. 수학 개념(정비례, 반비례, 좌표평면, 사분면, 일차방정식 등)에 대해 일상생활 예시를 들어 직관적으로 설명해 주세요.
-3. 방정식 문제 풀이 요청 시 1단계(이항하기), 2단계(양변 정리), 3단계(해 구하기)와 같이 과정별로 나누어 꼼꼼히 설명해 주세요.
-4. 마크다운 형식(불릿 포인트, 강조, 이모지)을 적극 활용하여 읽기 쉽게 작성해 주세요.`,
+      content: `당신은 '지윤샘의 AI 수학 튜터'입니다. 초·중등 수학 개념과 문제를 친절하고 알기 쉽게 단계별 수식으로 설명하는 수학 선생님입니다.
+
+[수식 표기 및 답변 필수 지침]
+1. 모든 수식과 미지수, 수치 표현은 라텍스(LaTeX) 기호 $...$ (인라인 수식) 또는 $$...$$ (블록 수식)을 사용하여 명확하게 작성하세요.
+   - 예시 인라인 수식: $2x + 3 = 11$, $y = ax$, $y = \\frac{a}{x}$, $(x, y)$, $x = 4$
+   - 예시 블록 수식:
+     $$2x + 3 = 11$$
+     $$2x = 8$$
+     $$x = 4$$
+2. 풀이 과정을 설명할 때는 1단계(이항하기), 2단계(동류항 정리), 3단계(x의 해 구하기)와 같이 수식을 순서대로 나열해 주세요.
+3. 항상 다정하고 격려하는 한국어 말투(~해요, ~랍니다! ✏️)를 사용하세요.`,
     };
 
-    // 대화 이력 구성 (최근 6개 대화 유지)
     const formattedHistory = Array.isArray(history)
       ? history.slice(-6).map((msg: { sender: string; text: string }) => ({
           role: msg.sender === "user" ? "user" : "assistant",
@@ -44,7 +47,6 @@ export async function POST(req: Request) {
 
     const messages = [systemMessage, ...formattedHistory, { role: "user", content: message }];
 
-    // OpenAI API 호출 (gpt-4o-mini 모델 사용)
     const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -54,16 +56,15 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages,
-        temperature: 0.7,
-        max_tokens: 800,
+        temperature: 0.5,
+        max_tokens: 1000,
       }),
     });
 
     if (!openAiResponse.ok) {
       const errorData = await openAiResponse.json().catch(() => ({}));
       console.error("OpenAI API 에러:", errorData);
-      
-      // 모델 변경 시도 (gpt-3.5-turbo 폴백)
+
       const fallbackOpenAi = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -73,19 +74,19 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
           messages,
-          temperature: 0.7,
-          max_tokens: 800,
+          temperature: 0.5,
+          max_tokens: 1000,
         }),
       });
 
       if (fallbackOpenAi.ok) {
         const data = await fallbackOpenAi.json();
-        const reply = data.choices[0]?.message?.content || "죄송해요, 답변을 생성하지 못했어요.";
+        const reply = data.choices[0]?.message?.content || "죄송해요, 수식 답변을 생성하지 못했어요.";
         return NextResponse.json({ reply });
       }
 
       return NextResponse.json({
-        reply: `😊 API 연결 확인 안내: ${errorData.error?.message || "OpenAI API 호출 중 오류가 발생했습니다."}\n\n${generateFallbackResponse(message)}`,
+        reply: `😊 API 연결 안내: ${errorData.error?.message || "OpenAI API 호출 중 오류가 발생했습니다."}\n\n${generateFallbackResponse(message)}`,
         isFallback: true,
       });
     }
@@ -103,44 +104,53 @@ export async function POST(req: Request) {
   }
 }
 
-// API 키 미설정 시 기초 수학 질문에 대한 친절한 내장 응답 생성기
+// 수식 표기가 포함된 내장 답변 생성기
 function generateFallbackResponse(query: string): string {
   const q = query.toLowerCase();
 
   if (q.includes("방정식") || q.includes("x=") || q.includes("x값")) {
-    return `✏️ **일차방정식 풀이 기본 원리 안내**
-    
-일차방정식은 등식의 성질을 이용하여 미지수 **x**만 좌변에 남기는 것이 핵심이에요!
+    return `✏️ **일차방정식 수식 풀이 가이드**
 
-1. **이항하기**: 변수가 있는 항은 좌변으로, 숫자는 우변으로 이항해요 (부호가 바뀌는 것 주의!).
-   - 예: \`2x + 3 = 11\` ➔ \`2x = 11 - 3\`
-2. **동류항 정리**: 우변 계산 ➔ \`2x = 8\`
-3. **양변 나누기**: x의 계수(2)로 양변을 나눠요 ➔ \`x = 4\`!`;
+일차방정식은 등식의 성질을 이용하여 미지수 $x$만 좌변에 남기는 것이 핵심이에요!
+
+예시 문제: $2x + 3 = 11$
+
+- **1단계: 이항하기** (숫자 항을 우변으로 이동)
+  $$2x = 11 - 3$$
+- **2단계: 우변 계산하기**
+  $$2x = 8$$
+- **3단계: 양변을 $x$의 계수인 $2$로 나누기**
+  $$x = \\frac{8}{2} = 4$$
+
+최종 정답: $x = 4$ 🎯`;
   }
 
   if (q.includes("정비례") || q.includes("반비례")) {
-    return `📈 **정비례와 반비례의 핵심 차이점**
+    return `📈 **정비례와 반비례 수식 관계 비교**
 
-- **정비례 ($y = ax$)**: x가 2배, 3배가 될 때 y도 2배, 3배가 되는 관계예요! 원점(0,0)을 지나는 직선 모양이랍니다.
-  - 예: 한 개에 500원 하는 과자를 x개 살 때 가격 y원 ($y = 500x$)
-- **반비례 ($y = a/x$)**: x가 2배, 3배가 될 때 y는 1/2배, 1/3배가 되는 관계예요! 1·3사분면 또는 2·4사분면에 위치하는 매끄러운 곡선(쌍곡선) 모양이에요.
-  - 예: 12개의 사탕을 x명이 똑같이 나누어 먹을 때 1명당 받는 개수 y개 ($y = 12/x$)`;
+- **정비례 관계식**: $y = ax$ ($a \\neq 0$)
+  - $x$가 $2$배, $3$배가 될 때 $y$도 $2$배, $3$배가 돼요!
+  - 그래프는 원점 $O(0,0)$을 지나는 직선 모양이랍니다.
+
+- **반비례 관계식**: $y = \\frac{a}{x}$ ($x \\neq 0$)
+  - $x$가 $2$배, $3$배가 될 때 $y$는 $\\frac{1}{2}$배, $\\frac{1}{3}$배가 돼요!
+  - 그래프는 $x$축과 $y$축에 한없이 가까워지는 매끄러운 쌍곡선 모양이랍니다.`;
   }
 
   if (q.includes("사분면") || q.includes("좌표")) {
-    return `🧭 **좌표평면과 사분면 안내**
+    return `🧭 **좌표평면과 사분면의 수식 부호**
 
-좌표평면은 X축과 Y축이 직교하여 4개의 구역으로 나뉘어요!
+좌표평면 상의 임의의 점은 순서쌍 $(x, y)$로 나타내요!
 
-- **제1사분면**: (+ , +) 우상단 (x>0, y>0)
-- **제2사분면**: (- , +) 좌상단 (x<0, y>0)
-- **제3사분면**: (- , -) 좌하단 (x<0, y<0)
-- **제4사분면**: (+ , -) 우하단 (x>0, y<0)
-- **원점 (0,0)**: X축과 Y축이 만나는 정중앙 점이랍니다!`;
+- **제1사분면**: $x > 0, y > 0 \ \rightarrow \ (+, +)$
+- **제2사분면**: $x < 0, y > 0 \ \rightarrow \ (-, +)$
+- **제3사분면**: $x < 0, y < 0 \ \rightarrow \ (-, -)$
+- **제4사분면**: $x > 0, y < 0 \ \rightarrow \ (+, -)$
+- **원점**: $O(0,0)$`;
   }
 
   return `✏️ **지윤샘 AI 수학 튜터의 답변**
 
-질문하신 내용 [**"${query}"**]에 대해 탐구해볼까요?
-수학 개념이나 일차방정식, 정비례·반비례 그래프, 좌표평면에 관한 어떤 질문이든 구체적으로 적어주시면 단계별로 쉽게 설명해 드릴게요!`;
+질문하신 내용 [**"${query}"**]에 대한 수학 수식 해설이에요!
+풀고자 하는 방정식이나 공식(예: $2x + 5 = 15$)을 입력해 주시면 단계별 수식으로 친절하게 풀이해 드립니다!`;
 }

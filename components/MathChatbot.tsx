@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Bot, Send, User, Sparkles, RefreshCw, Lightbulb, MessageSquare } from "lucide-react";
+import { Bot, Send, User, Sparkles, RefreshCw, Lightbulb } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -11,24 +11,83 @@ interface ChatMessage {
   isFallback?: boolean;
 }
 
-// 추천 수학 질문 칩 목록
 const SUGGESTED_QUESTIONS = [
-  "💡 일차방정식 3x + 5 = 20 풀이 과정 알려줘!",
-  "📈 정비례와 반비례의 차이점이 궁금해요",
-  "🧭 좌표평면에서 제3사분면은 어떤 부호인가요?",
-  "✏️ 비례상수 a가 음수일 때 반비례 그래프 모양은?",
+  "💡 일차방정식 2x + 3 = 11 수식 풀이 과정 알려줘!",
+  "📈 정비례(y=ax)와 반비례(y=a/x) 관계식 차이점이 궁금해요",
+  "🧭 좌표평면에서 제3사분면 순서쌍 (x, y) 부호는?",
+  "✏️ y = 0.5x 그래프의 특징을 수식으로 알려줘",
 ];
 
 /**
+ * [수학 수식 파싱 렌더러 컴포넌트]
+ * $...$ 인라인 수식과 $$...$$ 블록 수식을 아날로그 칠판 분필 수식 뱃지로 아름답게 렌더링합니다.
+ */
+function MathFormattedText({ content }: { content: string }) {
+  // $$...$$ 블록 수식 파싱
+  const blocks = content.split(/(\$\$[\s\S]*?\$\$)/g);
+
+  return (
+    <div className="space-y-1.5 leading-relaxed">
+      {blocks.map((block, bIdx) => {
+        if (block.startsWith("$$") && block.endsWith("$$")) {
+          // \frac{a}{b} -> (a / b) 분수 변환 및 수식 정리
+          const formula = block
+            .slice(2, -2)
+            .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "($1 / $2)")
+            .replace(/\\rightarrow/g, "➔")
+            .replace(/\\neq/g, "≠")
+            .trim();
+
+          return (
+            <div
+              key={`block-${bIdx}`}
+              className="my-2 p-3 bg-teal-950/95 border-2 border-dashed border-chalk-yellow rounded-xl text-center font-mono text-lg sm:text-xl text-chalk-yellow chalk-yellow-shadow tracking-wider shadow-inner"
+            >
+              {formula}
+            </div>
+          );
+        }
+
+        // $...$ 인라인 수식 파싱
+        const parts = block.split(/(\$.*?\$)/g);
+        return (
+          <span key={`text-${bIdx}`}>
+            {parts.map((part, pIdx) => {
+              if (part.startsWith("$") && part.endsWith("$") && part.length > 2) {
+                const formula = part
+                  .slice(1, -1)
+                  .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "($1 / $2)")
+                  .replace(/\\rightarrow/g, "➔")
+                  .replace(/\\neq/g, "≠")
+                  .trim();
+
+                return (
+                  <span
+                    key={`inline-${pIdx}`}
+                    className="font-mono text-chalk-yellow bg-teal-950 px-2 py-0.5 rounded-md border border-dashed border-chalk-yellow/70 font-bold mx-1 inline-block text-sm sm:text-base shadow-sm"
+                  >
+                    {formula}
+                  </span>
+                );
+              }
+              return part;
+            })}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * [지윤샘 AI 수학 튜터 챗봇 컴포넌트]
- * OpenAI API (OPENAI_API_KEY)를 활용하여 학생들의 수학 질문에 친절히 답해주는 아날로그 칠판 챗봇입니다.
  */
 export default function MathChatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome-1",
       sender: "ai",
-      text: "안녕하세요! **지윤샘의 AI 수학 튜터**에 오신 것을 환영해요 🤖✏️\n\n일차방정식 풀이법, 정비례·반비례 그래프, 좌표평면이나 수학 개념 중 헷갈리는 부분이 있다면 언제든지 질문해 주세요!",
+      text: "안녕하세요! **지윤샘의 AI 수학 튜터**에 오신 것을 환영해요 🤖✏️\n\n일차방정식 풀이 $ax + b = c$, 정비례 $y = ax$, 반비례 $y = \\frac{a}{x}$, 좌표평면 $(x,y)$에 대해 모든 질문을 단계별 **수식**으로 깔끔하게 해설해 드립니다!",
       timestamp: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -37,12 +96,10 @@ export default function MathChatbot() {
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // 메시지 추가 시 자동 스크롤
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // 질문 전송 처리
   const handleSendMessage = async (queryToSend?: string) => {
     const textToSubmit = (queryToSend || inputQuery).trim();
     if (!textToSubmit || isTyping) return;
@@ -98,13 +155,12 @@ export default function MathChatbot() {
     handleSendMessage();
   };
 
-  // 대화 초기화
   const handleResetChat = () => {
     setMessages([
       {
         id: "welcome-reset",
         sender: "ai",
-        text: "대화 내용이 초기화되었어요! 새로운 수학 질문을 입력해 주세요 ✏️",
+        text: "대화 내용이 초기화되었어요! 궁금한 수식이나 수학 질문을 입력해 주세요 ✏️",
         timestamp: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
@@ -116,14 +172,14 @@ export default function MathChatbot() {
       <div className="text-center mb-8 space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-950 rounded-full border border-dashed border-chalk-yellow text-chalk-yellow text-xs font-mono">
           <Bot className="w-4 h-4 text-chalk-yellow" />
-          <span>OpenAI 기반 24시간 실시간 AI 학습 멘토</span>
+          <span>수식 렌더링 지원 24시간 실시간 AI 수학 멘토</span>
         </div>
         <h2 className="font-pen text-4xl sm:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide">
-          🤖 지윤샘 AI 수학 튜터
+          🤖 지윤샘 AI 수학 튜터 (수식 해설)
         </h2>
         <p className="font-dodum text-sm sm:text-base text-teal-100/90 max-w-2xl mx-auto">
-          궁금한 수학 문제나 개념을 자유롭게 질문해보세요. <br />
-          지윤샘 AI가 단계별 풀이와 함께 친절하고 알기 쉽게 답변해드립니다!
+          궁금한 수학 문제나 공식을 입력해 보세요. <br />
+          지윤샘 AI가 단계별 <strong>수식($...$)</strong>과 함께 알기 쉽게 해설해 드립니다!
         </p>
       </div>
 
@@ -134,7 +190,7 @@ export default function MathChatbot() {
         <div className="flex items-center justify-between pb-3 border-b-2 border-dashed border-teal-700/60 text-xs font-dodum">
           <div className="flex items-center gap-2 text-chalk-yellow font-pen text-2xl">
             <Sparkles className="w-5 h-5 text-chalk-yellow" />
-            <span>실시간 수학 Q&amp;A 칠판</span>
+            <span>수식 자동 변환 Q&amp;A 칠판</span>
           </div>
 
           <button
@@ -182,15 +238,15 @@ export default function MathChatbot() {
                   <span>{msg.timestamp}</span>
                 </div>
 
-                {/* 텍스트 내용 줄바꿈 & 마크다운 스타일 렌더링 */}
-                <div className="font-dodum text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
-                  {msg.text}
+                {/* 수식 파싱 렌더러 적용 */}
+                <div className="font-dodum text-sm sm:text-base whitespace-pre-wrap break-words">
+                  <MathFormattedText content={msg.text} />
                 </div>
               </div>
             </div>
           ))}
 
-          {/* AI 생각 중 타이핑 인디케이터 */}
+          {/* AI 생성 중 인디케이터 */}
           {isTyping && (
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-teal-800 text-chalk-yellow border-2 border-dashed border-chalk-yellow flex items-center justify-center shrink-0 animate-pulse">
@@ -198,7 +254,7 @@ export default function MathChatbot() {
               </div>
               <div className="p-4 bg-teal-900/90 border border-dashed border-teal-500/50 text-chalk-yellow rounded-2xl rounded-tl-none font-dodum text-sm flex items-center gap-2 animate-pulse">
                 <Sparkles className="w-4 h-4 text-chalk-yellow animate-spin" />
-                <span>지윤샘 AI 튜터가 생각하며 칠판에 적고 있어요... ✏️</span>
+                <span>지윤샘 AI 튜터가 수식을 정리하며 칠판에 적고 있어요... ✏️</span>
               </div>
             </div>
           )}
@@ -210,7 +266,7 @@ export default function MathChatbot() {
         <div className="space-y-1.5 pt-1">
           <div className="flex items-center gap-1 text-xs text-chalk-yellow font-pen text-lg">
             <Lightbulb className="w-4 h-4 text-chalk-yellow" />
-            <span>추천 질문 클릭해보기:</span>
+            <span>추천 수식 질문 클릭해보기:</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -234,7 +290,7 @@ export default function MathChatbot() {
               type="text"
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
-              placeholder="수학 개념이나 문제풀이를 지윤샘 AI에게 물어보세요! (예: 일차방정식 풀이법)"
+              placeholder="방정식이나 공식을 입력하세요! (예: 2x + 3 = 11 수식 풀이 과정)"
               disabled={isTyping}
               className="w-full px-4 py-3 bg-teal-950 border-2 border-dashed border-teal-500 rounded-xl text-chalk-white font-dodum text-sm sm:text-base focus:outline-none focus:border-chalk-yellow disabled:opacity-60"
             />
