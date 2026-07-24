@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { TrendingUp, Database, Save, RefreshCw, AlertCircle, Sparkles, CheckCircle2, HelpCircle } from "lucide-react";
+import { TrendingUp, Database, Save, RefreshCw, AlertCircle, Sparkles, CheckCircle2, HelpCircle, Sliders } from "lucide-react";
 import { supabase, isSupabaseConfigured, GraphExplorationRecord } from "@/lib/supabase";
 
 /**
  * [정비례·반비례 그래프 탐구 및 Supabase 연동 컴포넌트]
  * - 정비례 y = ax 및 반비례 y = a/x 그래프를 칠판 좌표평면에 실시간 그리며 탐구합니다.
- * - 탐구 결과를 Supabase 데이터베이스에 저장하고 이력을 조회할 수 있습니다.
+ * - 비례상수 a의 범위를 유리수(소수/분수)까지 확장하고, 직선이 좌표평면 상자를 벗어나지 않도록 클리핑 처리합니다.
  */
 export default function ProportionGraph() {
-  // 1. 그래프 탐구 상태 관리
-  const [graphType, setGraphType] = useState<"direct" | "inverse">("direct"); // direct: 정비례, inverse: 반비례
-  const [constantA, setConstantA] = useState<number>(2); // 비례상수 a (기본값 2)
-  const [pointX, setPointX] = useState<number>(3); // 좌표 확인용 X 값
+  // 1. 그래프 탐구 상태 관리 (상수 a를 유리수 실수 범위로 지원)
+  const [graphType, setGraphType] = useState<"direct" | "inverse">("direct");
+  const [constantA, setConstantA] = useState<number>(0.5); // 유리수 비례상수 a (예: 0.5, 1.5, -2.5 등)
+  const [pointX, setPointX] = useState<number>(4); // 좌표 확인용 X 값
   const [studentName, setStudentName] = useState<string>("");
   const [memo, setMemo] = useState<string>("");
 
@@ -24,25 +24,26 @@ export default function ProportionGraph() {
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [showSqlGuide, setShowSqlGuide] = useState<boolean>(false);
 
-  // 2. 현재 정비례/반비례 관계식 문자열 계산
+  // 2. 현재 정비례/반비례 관계식 문자열 계산 (유리수 a 표기 깔끔화)
   const getEquationText = useCallback((): string => {
+    const formattedA = Number.isInteger(constantA) ? constantA.toString() : constantA.toFixed(2).replace(/\.?0+$/, "");
     if (graphType === "direct") {
       if (constantA === 1) return "y = x";
       if (constantA === -1) return "y = -x";
-      return `y = ${constantA}x`;
+      return `y = ${formattedA}x`;
     } else {
       if (constantA === 1) return "y = 1/x";
       if (constantA === -1) return "y = -1/x";
-      return `y = ${constantA}/x`;
+      return `y = ${formattedA}/x`;
     }
   }, [graphType, constantA]);
 
   // 3. 특정 X값에 대응하는 Y값 계산
   const getCalculatedY = useCallback((): number | null => {
     if (graphType === "direct") {
-      return constantA * pointX;
+      return parseFloat((constantA * pointX).toFixed(2));
     } else {
-      if (pointX === 0) return null; // 반비례는 x=0 정의되지 않음
+      if (pointX === 0) return null;
       return parseFloat((constantA / pointX).toFixed(2));
     }
   }, [graphType, constantA, pointX]);
@@ -69,7 +70,7 @@ export default function ProportionGraph() {
         console.error("Supabase 조회 에러:", error);
         setStatusMessage({
           type: "error",
-          text: `Supabase 테이블 조회 실패: ${error.message}. (SQL 스크립트를 SQL Editor에 실행하셨는지 확인해주세요)`,
+          text: `Supabase 테이블 조회 실패: ${error.message}. (supabase_schema.sql 실행 여부 확인)`,
         });
       } else if (data) {
         setRecords(data as GraphExplorationRecord[]);
@@ -97,7 +98,7 @@ export default function ProportionGraph() {
     if (!isSupabaseConfigured()) {
       setStatusMessage({
         type: "info",
-        text: "Supabase 연동 정보가 설정되어 있지 않습니다. 제공된 supabase_schema.sql을 생성해 주세요.",
+        text: "Supabase 연동 정보가 설정되어 있지 않습니다. 제공된 supabase_schema.sql을 참고하세요.",
       });
       return;
     }
@@ -125,7 +126,7 @@ export default function ProportionGraph() {
       } else {
         setStatusMessage({ type: "success", text: "🎉 Supabase에 탐구 결과가 성공적으로 저장되었습니다!" });
         setMemo("");
-        fetchRecords(); // 목록 새로고침
+        fetchRecords();
       }
     } catch (err) {
       console.error("Save error:", err);
@@ -135,20 +136,37 @@ export default function ProportionGraph() {
     }
   };
 
-  // 6. SVG 좌표계 세팅 (X: -10 ~ +10, Y: -10 ~ +10, SVG Canvas 크기: 400x400)
+  // 6. SVG 좌표계 세팅 (X: -10 ~ +10, Y: -10 ~ +10, SVG Canvas 크기: 360x360)
   const SVG_SIZE = 360;
   const RANGE = 10; // -10 ~ +10
   const toSvgX = (x: number) => SVG_SIZE / 2 + (x / RANGE) * (SVG_SIZE / 2);
   const toSvgY = (y: number) => SVG_SIZE / 2 - (y / RANGE) * (SVG_SIZE / 2);
 
-  // 7. 정비례 직선 및 반비례 쌍곡선 SVG Path 경로 생성
+  // 7. 정비례 직선 및 반비례 쌍곡선 SVG Path 경로 생성 (좌표평면 상자를 절대 벗어나지 않도록 클리핑 및 경계 계산)
   const renderGraphPath = () => {
     if (graphType === "direct") {
-      // y = ax 직선 (x: -10 ~ +10)
-      const x1 = -RANGE;
+      // 일차함수 y = ax 직선이 [-RANGE, RANGE] 상자를 벗어나지 않도록 경계 교점 정확히 계산
+      if (constantA === 0) {
+        return (
+          <line
+            x1={toSvgX(-RANGE)}
+            y1={toSvgY(0)}
+            x2={toSvgX(RANGE)}
+            y2={toSvgY(0)}
+            stroke="#fef08a"
+            strokeWidth="3"
+            className="chalk-yellow-shadow"
+          />
+        );
+      }
+
+      // y = a * x에서 y가 [-10, 10] 범위에 들어오는 x의 최대 한계 계산: |x| <= 10 / |a|
+      const xBound = Math.min(RANGE, RANGE / Math.abs(constantA));
+      const x1 = -xBound;
       const y1 = constantA * x1;
-      const x2 = RANGE;
+      const x2 = xBound;
       const y2 = constantA * x2;
+
       return (
         <line
           x1={toSvgX(x1)}
@@ -157,22 +175,22 @@ export default function ProportionGraph() {
           y2={toSvgY(y2)}
           stroke="#fef08a"
           strokeWidth="3"
-          strokeDasharray="0"
           className="chalk-yellow-shadow"
         />
       );
     } else {
-      // y = a/x 반비례 쌍곡선 (양수 구간 & 음수 구간 나누어 그리기)
+      // y = a/x 반비례 쌍곡선 (양수 구간 & 음수 구간 나누어 정밀 렌더링)
       const generateCurvePath = (isPositive: boolean) => {
         const points: string[] = [];
-        const start = isPositive ? 0.2 : -RANGE;
-        const end = isPositive ? RANGE : -0.2;
-        const step = 0.2;
+        const start = isPositive ? 0.1 : -RANGE;
+        const end = isPositive ? RANGE : -0.1;
+        const step = 0.1;
 
         for (let x = start; isPositive ? x <= end : x <= end; x += step) {
-          if (Math.abs(x) < 0.1) continue;
+          if (Math.abs(x) < 0.05) continue;
           const y = constantA / x;
-          if (Math.abs(y) <= RANGE * 1.5) {
+          // y가 좌표평면 한계 범위 내에 있을 때만 그리도록 클리핑
+          if (Math.abs(y) <= RANGE) {
             points.push(`${toSvgX(x)},${toSvgY(y)}`);
           }
         }
@@ -199,25 +217,25 @@ export default function ProportionGraph() {
       <div className="text-center mb-8 space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-950 rounded-full border border-dashed border-chalk-yellow text-chalk-yellow text-xs font-mono">
           <TrendingUp className="w-4 h-4 text-chalk-yellow" />
-          <span>중1 수학: 함수와 함수 그래프 탐구</span>
+          <span>중등 수학: 일차함수 & 비례 관계 그래프</span>
         </div>
         <h2 className="font-pen text-4xl sm:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide">
           📈 정비례 · 반비례 그래프 탐구기
         </h2>
         <p className="font-dodum text-sm sm:text-base text-teal-100/90 max-w-2xl mx-auto">
-          상수 <strong>a</strong> 값을 조절하여 정비례(y = ax) 직선과 반비례(y = a/x) 쌍곡선의 성질을 칠판에서 비교해보세요! <br />
-          탐구한 결과를 <strong>Supabase 데이터베이스</strong>에 저장하여 공유할 수 있습니다.
+          유리수 비례상수 <strong>a</strong>(소수, 분수 가능) 값을 조절하여 정비례(y = ax) 직선과 반비례(y = a/x) 쌍곡선을 탐구해 보세요! <br />
+          직선이 좌표평면 상자를 벗어나지 않도록 클리핑 처리되었으며, 탐구 결과를 <strong>Supabase</strong>에 저장할 수 있습니다.
         </p>
       </div>
 
-      {/* 메인 레이아웃: [좌] SVG 그래프 & 컨트롤러 | [우] 좌표 확인 & Supabase 연동 */}
+      {/* 메인 레이아웃 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* [좌측] 칠판 SVG 좌표평면 그래프 (col-span-7) */}
         <div className="lg:col-span-7 wood-frame bg-teal-900 rounded-2xl p-5 shadow-2xl flex flex-col items-center">
           
           {/* 그래프 제어 탭 (정비례 vs 반비례) */}
-          <div className="flex items-center justify-between w-full mb-4">
+          <div className="flex items-center justify-between w-full mb-4 gap-2 flex-wrap sm:flex-nowrap">
             <div className="flex bg-teal-950 p-1 rounded-xl border border-dashed border-teal-600/70">
               <button
                 onClick={() => setGraphType("direct")}
@@ -247,8 +265,8 @@ export default function ProportionGraph() {
             </div>
           </div>
 
-          {/* 칠판 SVG 좌표평면 Canvas */}
-          <div className="relative bg-teal-950/80 rounded-xl p-2 border-2 border-teal-600/80 w-full max-w-[360px] aspect-square shadow-inner flex items-center justify-center">
+          {/* 칠판 SVG 좌표평면 Canvas (상자 밖으로 직선이 일체 이탈하지 않도록 SVG clipPath 및 클리핑 적용) */}
+          <div className="relative bg-teal-950/90 rounded-xl p-2 border-2 border-teal-600/80 w-full max-w-[360px] aspect-square shadow-inner flex items-center justify-center overflow-hidden">
             
             {/* 사분면 지시 배경 워터마크 */}
             <div className="absolute inset-0 p-4 grid grid-cols-2 grid-rows-2 pointer-events-none opacity-20 font-pen text-lg text-chalk-white">
@@ -258,100 +276,137 @@ export default function ProportionGraph() {
               <div className="flex items-end justify-end">4사분면</div>
             </div>
 
-            <svg width={SVG_SIZE} height={SVG_SIZE} className="overflow-visible">
-              {/* 격자선 (Grid lines) */}
-              {Array.from({ length: 9 }, (_, i) => {
-                const val = (i - 4) * 2.5;
-                if (val === 0) return null;
-                return (
-                  <g key={`grid-${i}`}>
-                    <line x1={toSvgX(val)} y1={0} x2={toSvgX(val)} y2={SVG_SIZE} stroke="#134e4a" strokeWidth="1" strokeDasharray="2,2" />
-                    <line x1={0} y1={toSvgY(val)} x2={SVG_SIZE} y2={toSvgY(val)} stroke="#134e4a" strokeWidth="1" strokeDasharray="2,2" />
+            <svg width={SVG_SIZE} height={SVG_SIZE} className="overflow-hidden">
+              {/* 좌표평면 경계 클리핑 정의 */}
+              <defs>
+                <clipPath id="coord-plane-clip">
+                  <rect x="0" y="0" width={SVG_SIZE} height={SVG_SIZE} rx="6" />
+                </clipPath>
+              </defs>
+
+              {/* 클리핑 처리된 그래프 출력 그룹 */}
+              <g clipPath="url(#coord-plane-clip)">
+                
+                {/* 격자선 (Grid lines) */}
+                {Array.from({ length: 9 }, (_, i) => {
+                  const val = (i - 4) * 2.5;
+                  if (val === 0) return null;
+                  return (
+                    <g key={`grid-${i}`}>
+                      <line x1={toSvgX(val)} y1={0} x2={toSvgX(val)} y2={SVG_SIZE} stroke="#134e4a" strokeWidth="1" strokeDasharray="2,2" />
+                      <line x1={0} y1={toSvgY(val)} x2={SVG_SIZE} y2={toSvgY(val)} stroke="#134e4a" strokeWidth="1" strokeDasharray="2,2" />
+                    </g>
+                  );
+                })}
+
+                {/* X축 & Y축 분필 가이드라인 */}
+                <line x1={0} y1={toSvgY(0)} x2={SVG_SIZE} y2={toSvgY(0)} stroke="#fef08a" strokeWidth="2" />
+                <line x1={toSvgX(0)} y1={0} x2={toSvgX(0)} y2={SVG_SIZE} stroke="#fef08a" strokeWidth="2" />
+
+                {/* 원점 (0,0) 표기 */}
+                <circle cx={toSvgX(0)} cy={toSvgY(0)} r="4" fill="#fef08a" />
+                <text x={toSvgX(0.5)} y={toSvgY(-0.8)} fill="#fef08a" fontSize="11" fontFamily="sans-serif">
+                  O(0,0)
+                </text>
+
+                {/* 축 라벨 */}
+                <text x={SVG_SIZE - 15} y={toSvgY(0) - 6} fill="#fef08a" fontSize="12" fontWeight="bold">X</text>
+                <text x={toSvgX(0) + 6} y={15} fill="#fef08a" fontSize="12" fontWeight="bold">Y</text>
+
+                {/* 클리핑된 정비례 직선 / 반비례 쌍곡선 렌더링 */}
+                {renderGraphPath()}
+
+                {/* 점 (Point) 탐구 테스트 마커 */}
+                {calculatedY !== null && Math.abs(calculatedY) <= RANGE && Math.abs(pointX) <= RANGE && (
+                  <g>
+                    {/* 점 위치 점선 안내 */}
+                    <line x1={toSvgX(pointX)} y1={toSvgY(0)} x2={toSvgX(pointX)} y2={toSvgY(calculatedY)} stroke="#f472b6" strokeDasharray="3,3" />
+                    <line x1={toSvgX(0)} y1={toSvgY(calculatedY)} x2={toSvgX(pointX)} y2={toSvgY(calculatedY)} stroke="#f472b6" strokeDasharray="3,3" />
+
+                    {/* 점 마커 */}
+                    <circle cx={toSvgX(pointX)} cy={toSvgY(calculatedY)} r="6" fill="#f472b6" stroke="#ffffff" strokeWidth="1.5" />
+
+                    {/* 점 좌표 라벨 */}
+                    <text
+                      x={toSvgX(pointX) + 8}
+                      y={toSvgY(calculatedY) - 8}
+                      fill="#ffffff"
+                      fontSize="11"
+                      fontWeight="bold"
+                    >
+                      ({pointX}, {calculatedY})
+                    </text>
                   </g>
-                );
-              })}
+                )}
 
-              {/* X축 & Y축 분필 가이드라인 */}
-              <line x1={0} y1={toSvgY(0)} x2={SVG_SIZE} y2={toSvgY(0)} stroke="#fef08a" strokeWidth="2" />
-              <line x1={toSvgX(0)} y1={0} x2={toSvgX(0)} y2={SVG_SIZE} stroke="#fef08a" strokeWidth="2" />
-
-              {/* 원점 (0,0) 표기 */}
-              <circle cx={toSvgX(0)} cy={toSvgY(0)} r="4" fill="#fef08a" />
-              <text x={toSvgX(0.5)} y={toSvgY(-0.8)} fill="#fef08a" fontSize="11" fontFamily="sans-serif">
-                O(0,0)
-              </text>
-
-              {/* 축 라벨 */}
-              <text x={SVG_SIZE - 15} y={toSvgY(0) - 6} fill="#fef08a" fontSize="12" fontWeight="bold">X</text>
-              <text x={toSvgX(0) + 6} y={15} fill="#fef08a" fontSize="12" fontWeight="bold">Y</text>
-
-              {/* 그래프 곡선/직선 렌더링 */}
-              {renderGraphPath()}
-
-              {/* 점 (Point) 탐구 테스트 마커 */}
-              {calculatedY !== null && Math.abs(calculatedY) <= RANGE && (
-                <g>
-                  {/* 점 위치 점선 안내 */}
-                  <line x1={toSvgX(pointX)} y1={toSvgY(0)} x2={toSvgX(pointX)} y2={toSvgY(calculatedY)} stroke="#f472b6" strokeDasharray="3,3" />
-                  <line x1={toSvgX(0)} y1={toSvgY(calculatedY)} x2={toSvgX(pointX)} y2={toSvgY(calculatedY)} stroke="#f472b6" strokeDasharray="3,3" />
-
-                  {/* 점 포인트 */}
-                  <circle cx={toSvgX(pointX)} cy={toSvgY(calculatedY)} r="6" fill="#f472b6" stroke="#ffffff" strokeWidth="1.5" />
-
-                  {/* 점 좌표 라벨 */}
-                  <text
-                    x={toSvgX(pointX) + 8}
-                    y={toSvgY(calculatedY) - 8}
-                    fill="#ffffff"
-                    fontSize="11"
-                    fontWeight="bold"
-                    className="bg-teal-950 px-1"
-                  >
-                    ({pointX}, {calculatedY})
-                  </text>
-                </g>
-              )}
+              </g>
             </svg>
           </div>
 
-          {/* 상수 a 조절 슬라이더 패널 */}
+          {/* 비례상수 a 조절 패널 (유리수 소수/분수 지원) */}
           <div className="w-full mt-5 bg-teal-950/90 p-4 rounded-xl border border-dashed border-teal-600/60 space-y-3">
-            <div className="flex items-center justify-between">
-              <label htmlFor="constant-a-slider" className="font-pen text-2xl text-chalk-yellow">
-                비례상수 a 조절: <span className="text-chalk-white font-bold">{constantA}</span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label htmlFor="constant-a-input" className="font-pen text-2xl text-chalk-yellow flex items-center gap-1.5">
+                <Sliders className="w-5 h-5 text-chalk-yellow" />
+                <span>유리수 비례상수 a:</span>
               </label>
-              <span className="text-xs font-dodum text-teal-300">
-                {constantA > 0 ? "a > 0 (1,3사분면)" : "a < 0 (2,4사분면)"}
-              </span>
+              
+              {/* 유리수 직접 숫자로 입력창 */}
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-teal-300 font-dodum">직접 입력:</span>
+                <input
+                  id="constant-a-input"
+                  type="number"
+                  step="0.1"
+                  min="-10"
+                  max="10"
+                  value={constantA}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val)) {
+                      setConstantA(val);
+                    }
+                  }}
+                  className="w-24 px-2 py-1 bg-teal-900 border border-dashed border-chalk-yellow/70 rounded text-chalk-white font-mono text-center text-sm focus:outline-none"
+                />
+              </div>
             </div>
 
+            {/* 정밀 슬라이더 (step="0.1" 로 소수점 단위 조절 지원) */}
             <input
               id="constant-a-slider"
               type="range"
-              min="-8"
-              max="8"
-              step="1"
+              min="-6"
+              max="6"
+              step="0.1"
               value={constantA}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setConstantA(val === 0 ? (constantA > 0 ? -1 : 1) : val); // a != 0 유지
-              }}
+              onChange={(e) => setConstantA(parseFloat(e.target.value))}
               className="w-full accent-amber-400 cursor-pointer h-2 bg-teal-900 rounded-lg"
             />
 
-            {/* 빠른 a 설정 버튼들 */}
-            <div className="flex flex-wrap gap-2 pt-1 justify-center">
-              {[-6, -4, -2, -1, 1, 2, 4, 6].map((num) => (
+            {/* 자주 쓰이는 유리수 (소수/분수) 프리셋 버튼 */}
+            <div className="flex flex-wrap gap-1.5 pt-1 justify-center">
+              <span className="text-[11px] text-teal-300 font-dodum self-center mr-1">추천 유리수:</span>
+              {[
+                { label: "-2.5 (-5/2)", val: -2.5 },
+                { label: "-1.5 (-3/2)", val: -1.5 },
+                { label: "-0.5 (-1/2)", val: -0.5 },
+                { label: "0.5 (1/2)", val: 0.5 },
+                { label: "1.5 (3/2)", val: 1.5 },
+                { label: "2.5 (5/2)", val: 2.5 },
+                { label: "0.25 (1/4)", val: 0.25 },
+                { label: "3", val: 3 },
+              ].map((item) => (
                 <button
-                  key={`preset-a-${num}`}
-                  onClick={() => setConstantA(num)}
-                  className={`px-2.5 py-0.5 rounded text-xs font-mono border transition-colors cursor-pointer ${
-                    constantA === num
+                  key={`preset-a-${item.val}`}
+                  onClick={() => setConstantA(item.val)}
+                  className={`px-2 py-0.5 rounded text-xs font-mono border transition-colors cursor-pointer ${
+                    constantA === item.val
                       ? "bg-amber-400 text-teal-950 font-bold border-amber-400"
                       : "bg-teal-900 text-chalk-white border-teal-700 hover:border-chalk-yellow"
                   }`}
                 >
-                  a={num}
+                  {item.label}
                 </button>
               ))}
             </div>
@@ -379,8 +434,9 @@ export default function ProportionGraph() {
                   type="number"
                   min="-10"
                   max="10"
+                  step="0.5"
                   value={pointX}
-                  onChange={(e) => setPointX(parseInt(e.target.value, 10) || 0)}
+                  onChange={(e) => setPointX(parseFloat(e.target.value) || 0)}
                   className="w-full px-3 py-2 bg-teal-900 border border-dashed border-teal-500/70 rounded-lg text-chalk-white font-mono text-center focus:outline-none focus:border-chalk-yellow"
                 />
               </div>
@@ -396,7 +452,7 @@ export default function ProportionGraph() {
                     ? `y = ${constantA} × (${pointX}) = ${calculatedY}`
                     : pointX !== 0
                     ? `y = ${constantA} ÷ (${pointX}) = ${calculatedY}`
-                    : "반비례에서는 x=0 일 때 그래프가 원점을 지나지 않습니다!"}
+                    : "반비례에서는 x=0 일 때 정의되지 않습니다!"}
                 </p>
               </div>
             </div>
@@ -451,7 +507,7 @@ export default function ProportionGraph() {
                   rows={2}
                   value={memo}
                   onChange={(e) => setMemo(e.target.value)}
-                  placeholder="예: a가 음수일 때는 2, 4사분면에 위치하는 것을 확인했다!"
+                  placeholder="예: a가 분수일 때(예: 0.5) 기울기가 완만해지는 것을 관찰했다!"
                   className="w-full px-3 py-2 bg-teal-900 border border-dashed border-teal-500/70 rounded-lg text-chalk-white font-dodum text-xs focus:outline-none focus:border-chalk-yellow"
                 />
               </div>
