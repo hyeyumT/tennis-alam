@@ -26,8 +26,8 @@ export default function Hero({ onSelectApp }: HeroProps) {
             <span>아날로그 교실 감성 수학 학습 공간</span>
           </div>
 
-          <h1 className="font-pen text-4xl sm:text-6xl md:text-7xl font-bold text-chalk-white chalk-shadow tracking-wide leading-tight">
-            지윤샘과 함께하는 <br />
+          <h1 className="font-pen text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-chalk-white chalk-shadow tracking-wide leading-tight whitespace-nowrap">
+            지윤샘과 함께하는{" "}
             <span className="text-chalk-yellow chalk-yellow-shadow underline decoration-dashed decoration-chalk-pink underline-offset-8">
               즐거운 수학!
             </span>
