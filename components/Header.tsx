@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, Sparkles, GraduationCap, Target } from "lucide-react";
+import { BookOpen, Sparkles, GraduationCap, Target, TrendingUp } from "lucide-react";
 
 /**
  * [상단 헤더 컴포넌트]
@@ -30,17 +30,24 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-2">
           <a
             href="#hero"
-            className="px-4 py-2 text-chalk-white font-pen text-2xl hover:text-chalk-yellow transition-colors border-b-2 border-transparent hover:border-dashed hover:border-chalk-yellow flex items-center gap-1.5"
+            className="px-3 py-2 text-chalk-white font-pen text-2xl hover:text-chalk-yellow transition-colors border-b-2 border-transparent hover:border-dashed hover:border-chalk-yellow flex items-center gap-1.5"
           >
             <BookOpen className="w-4 h-4 text-teal-300" />
             수업 홈
           </a>
           <a
             href="#blind-omok"
-            className="px-4 py-2 text-chalk-white font-pen text-2xl hover:text-chalk-yellow transition-colors border-b-2 border-transparent hover:border-dashed hover:border-chalk-yellow flex items-center gap-1.5"
+            className="px-3 py-2 text-chalk-white font-pen text-2xl hover:text-chalk-yellow transition-colors border-b-2 border-transparent hover:border-dashed hover:border-chalk-yellow flex items-center gap-1.5"
           >
             <Target className="w-4 h-4 text-chalk-yellow" />
             순서쌍 오목
+          </a>
+          <a
+            href="#proportion-graph"
+            className="px-3 py-2 text-chalk-white font-pen text-2xl hover:text-chalk-yellow transition-colors border-b-2 border-transparent hover:border-dashed hover:border-chalk-yellow flex items-center gap-1.5"
+          >
+            <TrendingUp className="w-4 h-4 text-chalk-pink" />
+            비례 그래프
           </a>
           <a
             href="#features"
