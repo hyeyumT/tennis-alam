@@ -28,3 +28,12 @@ export interface GraphExplorationRecord {
   equation: string;
   memo?: string;
 }
+
+export interface EquationGameRankingRecord {
+  id?: string;
+  created_at?: string;
+  student_name: string;
+  score: number;
+  correct_count: number;
+  max_combo: number;
+}

@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, Sparkles, GraduationCap, Target, TrendingUp } from "lucide-react";
+import { BookOpen, Sparkles, GraduationCap, Target, TrendingUp, Zap } from "lucide-react";
 
 /**
  * [상단 헤더 컴포넌트]
@@ -34,6 +34,13 @@ export default function Header() {
           >
             <BookOpen className="w-4 h-4 text-teal-300" />
             수업 홈
+          </a>
+          <a
+            href="#equation-game"
+            className="px-3 py-2 text-chalk-white font-pen text-2xl hover:text-chalk-yellow transition-colors border-b-2 border-transparent hover:border-dashed hover:border-chalk-yellow flex items-center gap-1.5"
+          >
+            <Zap className="w-4 h-4 text-chalk-yellow" />
+            방정식 랭킹
           </a>
           <a
             href="#blind-omok"
