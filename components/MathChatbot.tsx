@@ -174,8 +174,8 @@ export default function MathChatbot() {
           <Bot className="w-4 h-4 text-chalk-yellow" />
           <span>수식 렌더링 지원 24시간 실시간 AI 수학 멘토</span>
         </div>
-        <h2 className="font-pen text-4xl sm:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide">
-          🤖 지윤샘 AI 수학 튜터 (수식 해설)
+        <h2 className="font-pen text-3xl sm:text-4xl md:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide whitespace-nowrap">
+          🤖 지윤샘 AI 수학 튜터
         </h2>
         <p className="font-dodum text-sm sm:text-base text-teal-100/90 max-w-2xl mx-auto">
           궁금한 수학 문제나 공식을 입력해 보세요. <br />

@@ -185,7 +185,7 @@ export default function BlindOmok() {
           <Compass className="w-4 h-4 text-chalk-yellow" />
           <span>중앙 원점 (0,0) 좌표평면 & 사분면 학습</span>
         </div>
-        <h2 className="font-pen text-4xl sm:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide">
+        <h2 className="font-pen text-3xl sm:text-4xl md:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide whitespace-nowrap">
           🎯 (0,0) 중심 순서쌍 블라인드 오목
         </h2>
         <p className="font-dodum text-sm sm:text-base text-teal-100/90 max-w-2xl mx-auto">

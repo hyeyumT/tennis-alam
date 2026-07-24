@@ -9,8 +9,8 @@ interface HeroProps {
 
 /**
  * [메인 히어로 대시보드 컴포넌트]
- * 메인 칠판 화면에 4가지 수학 학습 앱(AI 수학 튜터 챗봇, 일차방정식 랭킹, 비례 그래프, 순서쌍 오목)
- * 직관적인 대형 버튼 카드를 배치하고, 클릭 시 해당 앱으로 즉시 이동하도록 연결합니다.
+ * 메인 칠판 환영 타이틀은 기존대로 2줄로 유지하고,
+ * 각 수학 학습 앱 카드들의 제목은 한 줄로 깔끔하게 배치합니다.
  */
 export default function Hero({ onSelectApp }: HeroProps) {
   return (
@@ -18,7 +18,7 @@ export default function Hero({ onSelectApp }: HeroProps) {
       {/* 칠판 프레임 (아날로그 원목 테두리) */}
       <div className="relative wood-frame rounded-2xl bg-teal-900/90 p-6 sm:p-10 md:p-12 border-4 border-amber-900/80 shadow-2xl overflow-hidden">
         
-        {/* 칠판 배지 및 메인 타이틀 */}
+        {/* 칠판 배지 및 메인 타이틀 (기존대로 즐거운 수학! 아랫줄 배치) */}
         <div className="border-2 border-dashed border-teal-500/40 rounded-xl p-6 sm:p-8 flex flex-col items-center text-center space-y-6">
           
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-950/80 border border-dashed border-chalk-yellow text-chalk-yellow text-sm font-medium animate-pulse">
@@ -26,8 +26,9 @@ export default function Hero({ onSelectApp }: HeroProps) {
             <span>아날로그 교실 감성 수학 학습 공간</span>
           </div>
 
-          <h1 className="font-pen text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-chalk-white chalk-shadow tracking-wide leading-tight whitespace-nowrap">
-            지윤샘과 함께하는{" "}
+          {/* 메인 타이틀: 기존 2줄 형태 복원 */}
+          <h1 className="font-pen text-4xl sm:text-6xl md:text-7xl font-bold text-chalk-white chalk-shadow tracking-wide leading-tight">
+            지윤샘과 함께하는 <br />
             <span className="text-chalk-yellow chalk-yellow-shadow underline decoration-dashed decoration-chalk-pink underline-offset-8">
               즐거운 수학!
             </span>
@@ -38,7 +39,7 @@ export default function Hero({ onSelectApp }: HeroProps) {
             선택한 앱 페이지로 바로 이동하여 몰입감 있게 학습할 수 있습니다.
           </p>
 
-          {/* === 메인 칠판 수학 앱 4대 대형 버튼 카드 메뉴판 === */}
+          {/* === 메인 칠판 수학 앱 4대 대형 버튼 카드 (앱 제목 한 줄 표기) === */}
           <div className="w-full pt-4 space-y-4">
             <div className="flex items-center justify-center gap-1.5 text-chalk-yellow font-pen text-2xl sm:text-3xl">
               <span>🚀 학습할 수학 앱을 선택하세요</span>
@@ -46,7 +47,7 @@ export default function Hero({ onSelectApp }: HeroProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full text-left">
               
-              {/* 버튼 1: 지윤샘 AI 수학 튜터 챗봇 */}
+              {/* 버튼 1: AI 수학 튜터 */}
               <button
                 onClick={() => onSelectApp("tutor")}
                 className="group relative p-5 bg-teal-950/90 hover:bg-emerald-950/90 rounded-2xl border-2 border-dashed border-chalk-yellow hover:border-emerald-400 shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
@@ -61,7 +62,8 @@ export default function Hero({ onSelectApp }: HeroProps) {
                     </span>
                   </div>
 
-                  <h3 className="font-pen text-3xl text-chalk-yellow chalk-yellow-shadow group-hover:scale-105 transition-transform origin-left">
+                  {/* 앱 제목 한 줄로 깔끔 표기 */}
+                  <h3 className="font-pen text-2xl sm:text-3xl text-chalk-yellow chalk-yellow-shadow whitespace-nowrap group-hover:scale-105 transition-transform origin-left">
                     🤖 AI 수학 튜터
                   </h3>
                   <p className="text-xs font-dodum text-teal-200/90 leading-relaxed">
@@ -90,7 +92,8 @@ export default function Hero({ onSelectApp }: HeroProps) {
                     </span>
                   </div>
 
-                  <h3 className="font-pen text-3xl text-chalk-yellow chalk-yellow-shadow group-hover:scale-105 transition-transform origin-left">
+                  {/* 앱 제목 한 줄로 깔끔 표기 */}
+                  <h3 className="font-pen text-2xl sm:text-3xl text-chalk-yellow chalk-yellow-shadow whitespace-nowrap group-hover:scale-105 transition-transform origin-left">
                     ⚡ 방정식 랭킹
                   </h3>
                   <p className="text-xs font-dodum text-teal-200/90 leading-relaxed">
@@ -119,7 +122,8 @@ export default function Hero({ onSelectApp }: HeroProps) {
                     </span>
                   </div>
 
-                  <h3 className="font-pen text-3xl text-chalk-pink chalk-pink-shadow group-hover:scale-105 transition-transform origin-left">
+                  {/* 앱 제목 한 줄로 깔끔 표기 */}
+                  <h3 className="font-pen text-2xl sm:text-3xl text-chalk-pink chalk-pink-shadow whitespace-nowrap group-hover:scale-105 transition-transform origin-left">
                     📈 비례 그래프
                   </h3>
                   <p className="text-xs font-dodum text-teal-200/90 leading-relaxed">
@@ -148,7 +152,8 @@ export default function Hero({ onSelectApp }: HeroProps) {
                     </span>
                   </div>
 
-                  <h3 className="font-pen text-3xl text-chalk-white chalk-shadow group-hover:scale-105 transition-transform origin-left">
+                  {/* 앱 제목 한 줄로 깔끔 표기 */}
+                  <h3 className="font-pen text-2xl sm:text-3xl text-chalk-white chalk-shadow whitespace-nowrap group-hover:scale-105 transition-transform origin-left">
                     🎯 순서쌍 오목
                   </h3>
                   <p className="text-xs font-dodum text-teal-200/90 leading-relaxed">
@@ -170,7 +175,7 @@ export default function Hero({ onSelectApp }: HeroProps) {
         {/* 칠판 하단 장식 */}
         <div className="mt-6 pt-4 border-t-2 border-dashed border-teal-700/50 flex justify-between items-center text-xs text-teal-300/70 font-pen text-lg">
           <span>✏️ 지윤샘의 즐거운 수학 교실</span>
-          <span>🚀 클릭하여 각 앱으로 자유롭게 이동해보세요</span>
+          <span>🚀 앱 선택 시 개별 학습 화면으로 단독 이동합니다</span>
         </div>
 
       </div>

@@ -219,7 +219,7 @@ export default function ProportionGraph() {
           <TrendingUp className="w-4 h-4 text-chalk-yellow" />
           <span>중등 수학: 일차함수 & 비례 관계 그래프</span>
         </div>
-        <h2 className="font-pen text-4xl sm:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide">
+        <h2 className="font-pen text-3xl sm:text-4xl md:text-5xl text-chalk-yellow chalk-yellow-shadow tracking-wide whitespace-nowrap">
           📈 정비례 · 반비례 그래프 탐구기
         </h2>
         <p className="font-dodum text-sm sm:text-base text-teal-100/90 max-w-2xl mx-auto">
